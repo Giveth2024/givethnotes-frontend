@@ -6,12 +6,18 @@ import { useUser, RedirectToSignIn } from '@clerk/nextjs';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faPlus } from '@fortawesome/free-solid-svg-icons';
 
+function parseTimestamp(dateString) {
+  // UTC timestamp (ISO with Z)
+  if (dateString.endsWith('Z')) {
+    return new Date(dateString);
+  }
 
+  // MySQL datetime (local)
+  return new Date(dateString.replace(' ', 'T'));
+}
 
-
-function timeAgo(mysqlDateTime) {
-  // Force browser to treat it as local time
-  const date = new Date(mysqlDateTime.replace(' ', 'T'));
+function timeAgo(dateString) {
+  const date = parseTimestamp(dateString);
   const now = new Date();
 
   const diffSeconds = Math.floor(
@@ -27,9 +33,8 @@ function timeAgo(mysqlDateTime) {
   return `${Math.floor(diffSeconds / 86400)} days ago`;
 }
 
-
-function daysSince(mysqlDate) {
-  const date = new Date(mysqlDate.replace(' ', 'T'));
+function daysSince(dateString) {
+  const date = parseTimestamp(dateString);
   const now = new Date();
 
   const days = Math.floor(
@@ -41,35 +46,10 @@ function daysSince(mysqlDate) {
   return `${days} Days`;
 }
 
-
 export default function DashboardPage() {
   const { isSignedIn, isLoaded } = useUser();
   const [paths, setPaths] = useState([]);
   const [activityMap, setActivityMap] = useState({});
-
-  useEffect(() => {
-    const now = new Date();
-
-    const gmt3 = new Date(
-      now.getTime() + (3 * 60 * 60 * 1000)
-    );
-
-    alert(
-      `Local time: ${now.toString()}\n` +
-      `GMT+3 time: ${gmt3.toString()}`
-    );
-  }, []);
-
-  useEffect(() => {
-    const raw = "2026-01-07 12:23:06";
-
-    const parsed = new Date(raw.replace(' ', 'T'));
-
-    alert(
-      `Raw DB: ${raw}\n` +
-      `Parsed: ${parsed.toString()}`
-    );
-  }, []);
 
   useEffect(() => {
     if (!isSignedIn) return;
