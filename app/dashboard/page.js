@@ -6,26 +6,38 @@ import { useUser, RedirectToSignIn } from '@clerk/nextjs';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faPlus } from '@fortawesome/free-solid-svg-icons';
 
-function timeAgo(dateString) {
+function timeAgo(mysqlDateTime) {
+  // Force browser to treat it as local time
+  const date = new Date(mysqlDateTime.replace(' ', 'T'));
   const now = new Date();
-  const date = new Date(dateString);
-  const diff = Math.floor((now - date) / 1000);
 
-  if (diff < 60) return 'Just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)} mins ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} hrs ago`;
-  return `${Math.floor(diff / 86400)} days ago`;
+  const diffSeconds = Math.floor(
+    (now.getTime() - date.getTime()) / 1000
+  );
+
+  if (diffSeconds < 60) return 'Just now';
+  if (diffSeconds < 3600)
+    return `${Math.floor(diffSeconds / 60)} mins ago`;
+  if (diffSeconds < 86400)
+    return `${Math.floor(diffSeconds / 3600)} hrs ago`;
+
+  return `${Math.floor(diffSeconds / 86400)} days ago`;
 }
 
-function daysSince(dateString) {
+
+function daysSince(mysqlDate) {
+  const date = new Date(mysqlDate.replace(' ', 'T'));
   const now = new Date();
-  const date = new Date(dateString);
-  const days = Math.floor((now - date) / 86400000);
+
+  const days = Math.floor(
+    (now.getTime() - date.getTime()) / 86400000
+  );
 
   if (days === 0) return 'Today';
   if (days === 1) return 'Yesterday';
   return `${days} Days`;
 }
+
 
 export default function DashboardPage() {
   const { isSignedIn, isLoaded } = useUser();
