@@ -1,3 +1,5 @@
+'use client';
+
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faLayerGroup,
@@ -11,9 +13,19 @@ import {
   faChartLine
 } from '@fortawesome/free-solid-svg-icons';
 import DailyQuote from './components/DailyQuote';
+import { useRouter } from 'next/navigation';
 
 
 export default function LandingPage() {
+  const router = useRouter();
+  function toSignUp()
+  {
+    router.push('/sign-up');
+  }
+  function toSignIn()
+  {
+    router.push('/sign-in');
+  }
   return (
     <main className="min-h-screen flex flex-col">
       {/* Hero Section */}
@@ -32,11 +44,11 @@ export default function LandingPage() {
           </p>
 
           <div className="mt-10 flex gap-4 justify-center">
-            <button className="px-6 py-3 rounded-lg bg-amber-400 text-black font-medium hover:opacity-90 transition">
+            <button onClick={() => toSignIn()} className="px-6 py-3 rounded-lg bg-amber-400 text-black font-medium hover:opacity-90 transition">
               Login
             </button>
 
-            <button className="px-6 py-3 rounded-lg border border-gray-600 hover:border-amber-400 transition">
+            <button onClick={() => toSignUp()} className="px-6 py-3 rounded-lg border border-gray-600 hover:border-amber-400 transition">
               Sign Up
             </button>
           </div>

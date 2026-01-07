@@ -45,6 +45,9 @@ This project is built with Next.js using the App Router. Below is a brief overvi
 
 ### Pages
 - **Landing Page (`app/page.js`)**: The main entry point of the application. It features a hero section, a growth-focused value proposition, and a "Path to Mastery" guide.
+- **Sign In (`app/sign-in/[[...sign-in]]/page.js`)**: Sign in UI powered by Clerk, available at `/sign-in`. After sign-in users are redirected to `/dashboard`.
+- **Sign Up (`app/sign-up/[[...sign-up]]/page.js`)**: Sign up UI powered by Clerk, available at `/sign-up`. After sign-up users are redirected to `/dashboard`.
+- **Dashboard (`app/dashboard/page.js`)**: User dashboard and private area (intended for authenticated users).
 
 ### Components
 - **Navbar (`app/components/Navbar.js`)**: A sticky navigation bar that includes the GivethNotes logo and a call-to-action button.
@@ -56,3 +59,28 @@ This project is built with Next.js using the App Router. Below is a brief overvi
 
 ### Other
 - **Icons (`app/icons/page.js`)**: A simple page demonstrating the usage of FontAwesome icons within the project.
+
+## Authentication (Clerk) ✅
+This project uses [Clerk](https://clerk.com) for authentication.
+
+- **Packages installed**: `@clerk/nextjs`, `@clerk/themes` (see `package.json`).
+- **Provider**: The application is wrapped with `<ClerkProvider>` in `app/layout.js`.
+- **Routes**:
+  - `/sign-in` — Sign in page (`app/sign-in/[[...sign-in]]/page.js`) using `<SignIn />`.
+  - `/sign-up` — Sign up page (`app/sign-up/[[...sign-up]]/page.js`) using `<SignUp />`.
+  - Both pages redirect to `/dashboard` after success.
+
+Setup
+1. Create a Clerk application at https://dashboard.clerk.com and copy your keys.
+2. Add the following environment variables to your local `.env` (do NOT commit secrets):
+
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
+CLERK_SECRET_KEY=sk_live_...
+```
+
+3. Restart the dev server (`npm run dev`) and visit `/sign-up` or `/sign-in` to test.
+
+Notes
+- Customize the Clerk UI via the `appearance` props used in the sign-in/sign-up pages (they use the `dark` theme and custom colors).
+- Keep your `CLERK_SECRET_KEY` private and do not commit it to version control.
