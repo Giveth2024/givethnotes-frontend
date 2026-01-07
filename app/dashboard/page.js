@@ -6,6 +6,31 @@ import { useUser, RedirectToSignIn } from '@clerk/nextjs';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faPlus } from '@fortawesome/free-solid-svg-icons';
 
+useEffect(() => {
+  const now = new Date();
+
+  const gmt3 = new Date(
+    now.getTime() + (3 * 60 * 60 * 1000)
+  );
+
+  alert(
+    `Local time: ${now.toString()}\n` +
+    `GMT+3 time: ${gmt3.toString()}`
+  );
+}, []);
+
+useEffect(() => {
+  const raw = "2026-01-07 12:23:06";
+
+  const parsed = new Date(raw.replace(' ', 'T'));
+
+  alert(
+    `Raw DB: ${raw}\n` +
+    `Parsed: ${parsed.toString()}`
+  );
+}, []);
+
+
 function timeAgo(mysqlDateTime) {
   // Force browser to treat it as local time
   const date = new Date(mysqlDateTime.replace(' ', 'T'));
