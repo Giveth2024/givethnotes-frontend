@@ -60,7 +60,7 @@ function activityTime(dateString) {
   const date = new Date(dateString);
 
   // manually add +3 hours
-  date.setHours(date.getHours() - 2);
+  date.setHours(date.getHours() - 3);
 
   const diffSeconds = Math.floor((now - date) / 1000);
 
