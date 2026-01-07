@@ -6,29 +6,7 @@ import { useUser, RedirectToSignIn } from '@clerk/nextjs';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faPlus } from '@fortawesome/free-solid-svg-icons';
 
-useEffect(() => {
-  const now = new Date();
 
-  const gmt3 = new Date(
-    now.getTime() + (3 * 60 * 60 * 1000)
-  );
-
-  alert(
-    `Local time: ${now.toString()}\n` +
-    `GMT+3 time: ${gmt3.toString()}`
-  );
-}, []);
-
-useEffect(() => {
-  const raw = "2026-01-07 12:23:06";
-
-  const parsed = new Date(raw.replace(' ', 'T'));
-
-  alert(
-    `Raw DB: ${raw}\n` +
-    `Parsed: ${parsed.toString()}`
-  );
-}, []);
 
 
 function timeAgo(mysqlDateTime) {
@@ -68,6 +46,30 @@ export default function DashboardPage() {
   const { isSignedIn, isLoaded } = useUser();
   const [paths, setPaths] = useState([]);
   const [activityMap, setActivityMap] = useState({});
+
+  useEffect(() => {
+    const now = new Date();
+
+    const gmt3 = new Date(
+      now.getTime() + (3 * 60 * 60 * 1000)
+    );
+
+    alert(
+      `Local time: ${now.toString()}\n` +
+      `GMT+3 time: ${gmt3.toString()}`
+    );
+  }, []);
+
+  useEffect(() => {
+    const raw = "2026-01-07 12:23:06";
+
+    const parsed = new Date(raw.replace(' ', 'T'));
+
+    alert(
+      `Raw DB: ${raw}\n` +
+      `Parsed: ${parsed.toString()}`
+    );
+  }, []);
 
   useEffect(() => {
     if (!isSignedIn) return;
