@@ -6,6 +6,12 @@ import { useUser, RedirectToSignIn } from '@clerk/nextjs';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faPlus } from '@fortawesome/free-solid-svg-icons';
 
+function addGMT3(dateString) {
+  const date = new Date(dateString);
+  return new Date(date.getTime() + 3 * 60 * 60 * 1000);
+}
+
+
 function parseTimestamp(dateString) {
   // UTC timestamp (ISO with Z)
   if (dateString.endsWith('Z')) {
@@ -17,7 +23,7 @@ function parseTimestamp(dateString) {
 }
 
 function timeAgo(dateString) {
-  const date = parseTimestamp(dateString);
+  const date = addGMT3(dateString);
   const now = new Date();
 
   const diffSeconds = Math.floor(
@@ -33,8 +39,9 @@ function timeAgo(dateString) {
   return `${Math.floor(diffSeconds / 86400)} days ago`;
 }
 
+
 function daysSince(dateString) {
-  const date = parseTimestamp(dateString);
+  const date = addGMT3(dateString);
   const now = new Date();
 
   const days = Math.floor(
@@ -45,6 +52,27 @@ function daysSince(dateString) {
   if (days === 1) return 'Yesterday';
   return `${days} Days`;
 }
+
+function activityTime(dateString) {
+  const now = new Date();
+
+  // original time
+  const date = new Date(dateString);
+
+  // manually add +3 hours
+  date.setHours(date.getHours() - 0);
+
+  const diffSeconds = Math.floor((now - date) / 1000);
+
+  if (diffSeconds < 60) return 'Just now';
+  if (diffSeconds < 3600)
+    return `${Math.floor(diffSeconds / 60)} mins ago`;
+  if (diffSeconds < 86400)
+    return `${Math.floor(diffSeconds / 3600)} hrs ago`;
+
+  return `${Math.floor(diffSeconds / 86400)} days ago`;
+}
+
 
 export default function DashboardPage() {
   const { isSignedIn, isLoaded } = useUser();
@@ -144,9 +172,9 @@ export default function DashboardPage() {
             {/* Bottom */}
             <div className="px-5 pb-5 flex items-center gap-2 text-sm text-amber-200 opacity-80">
               <FontAwesomeIcon icon={faClock} />
-              {activityMap[path.id]
-                ? `Active: ${timeAgo(activityMap[path.id])}`
-                : 'No activity yet'}
+                {activityMap[path.id]
+                  ? `Active: ${activityTime(activityMap[path.id])}`
+                  : 'No activity yet'}
             </div>
           </div>
         ))}
