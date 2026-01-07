@@ -1,94 +1,137 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useUser, RedirectToSignIn } from '@clerk/nextjs';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faBook, 
-  faCode, 
-  faLayerGroup, 
-  faChartLine,
-  faArrowRightFromBracket // Icon for sign out
-} from '@fortawesome/free-solid-svg-icons';
-import { SignOutButton } from "@clerk/nextjs"; // Import Clerk Button
+import { faClock, faPlus } from '@fortawesome/free-solid-svg-icons';
 
-export default function Dashboard() {
-  return (
-    <div className="flex min-h-screen bg-black text-white">
-      {/* 1. Sidebar */}
-      <aside className="w-64 border-r border-gray-800 p-6 hidden md:block">
-        <h2 className="text-xl font-bold text-amber-400 mb-10">MasteryDB</h2>
-        <nav className="space-y-6">
-          <a href="#" className="flex items-center gap-3 text-amber-400 font-medium">
-            <FontAwesomeIcon icon={faLayerGroup} /> Dashboard
-          </a>
-          <a href="#" className="flex items-center gap-3 text-gray-400 hover:text-white transition">
-            <FontAwesomeIcon icon={faBook} /> My Blocks
-          </a>
-          <a href="#" className="flex items-center gap-3 text-gray-400 hover:text-white transition">
-            <FontAwesomeIcon icon={faCode} /> Code Snippets
-          </a>
+function timeAgo(dateString) {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diff = Math.floor((now - date) / 1000);
 
-          <div className="pt-10 border-t border-gray-800">
-            {/* --- CLERK SIGN OUT BUTTON --- */}
-            <SignOutButton>
-              <button className="flex items-center gap-3 text-red-400 hover:text-red-300 transition w-full">
-                <FontAwesomeIcon icon={faArrowRightFromBracket} />
-                <span>Sign Out</span>
-              </button>
-            </SignOutButton>
-            {/* ----------------------------- */}
-          </div>
-        </nav>
-      </aside>
-
-      {/* 2. Main Content */}
-      <main className="flex-1 p-8">
-        <header className="flex justify-between items-center mb-10">
-          <div>
-            <h1 className="text-3xl font-bold">Welcome back, Giveth</h1>
-            <p className="text-gray-400 mt-1">Ready to document your next breakthrough?</p>
-          </div>
-          
-          {/* Quick Access Sign Out for Mobile/Testing */}
-          <div className="flex items-center gap-4">
-             <SignOutButton>
-                <button className="md:hidden px-3 py-1 text-xs border border-red-500 text-red-500 rounded">
-                  Logout
-                </button>
-             </SignOutButton>
-             <div className="h-10 w-10 rounded-full bg-amber-400 flex items-center justify-center text-black font-bold">
-               G
-             </div>
-          </div>
-        </header>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <StatCard title="Blocks Created" value="24" icon={faLayerGroup} />
-          <StatCard title="Days Streak" value="12" icon={faChartLine} />
-          <StatCard title="Concepts Mastered" value="8" icon={faBook} />
-        </div>
-
-        <section className="bg-gray-900 border border-gray-800 rounded-2xl p-6">
-          <h3 className="text-lg font-semibold mb-4">Recent Blocks</h3>
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center justify-between p-4 bg-black rounded-lg border border-gray-800">
-                <span>Understanding Next.js Middleware</span>
-                <span className="text-xs text-gray-500">2 hours ago</span>
-              </div>
-            ))}
-          </div>
-        </section>
-      </main>
-    </div>
-  );
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)} mins ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hrs ago`;
+  return `${Math.floor(diff / 86400)} days ago`;
 }
 
-function StatCard({ title, value, icon }) {
+function daysSince(dateString) {
+  const now = new Date();
+  const date = new Date(dateString);
+  const days = Math.floor((now - date) / 86400000);
+
+  if (days === 0) return 'Today';
+  if (days === 1) return 'Yesterday';
+  return `${days} Days`;
+}
+
+export default function DashboardPage() {
+  const { isSignedIn, isLoaded } = useUser();
+  const [paths, setPaths] = useState([]);
+  const [activityMap, setActivityMap] = useState({});
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+
+    axios
+      .get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/career-paths`)
+      .then(async (res) => {
+        setPaths(res.data);
+
+        // Fetch last activity per career path
+        const activityRequests = res.data.map((path) =>
+          axios
+            .get(
+              `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/journal-entries?career_path_id=${path.id}`
+            )
+            .then((r) => ({
+              id: path.id,
+              lastUpdated: r.data?.[0]?.updated_at || null,
+            }))
+        );
+
+        const results = await Promise.all(activityRequests);
+        const map = {};
+        results.forEach((r) => {
+          map[r.id] = r.lastUpdated;
+        });
+
+        setActivityMap(map);
+      });
+  }, [isSignedIn]);
+
+  if (!isLoaded) return null;
+  if (!isSignedIn) return <RedirectToSignIn />;
+
   return (
-    <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl">
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-gray-400 text-sm">{title}</span>
-        <FontAwesomeIcon icon={icon} className="text-amber-400" />
+    <main className="min-h-screen px-8 py-10">
+      {/* Top Section */}
+      <div className="flex flex-col gap-6 mb-10 
+                      sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-center sm:text-left">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-100">
+            My Career Paths
+          </h1>
+          <p className="text-gray-400 mt-1">
+            Manage your learning journeys and track your progress
+          </p>
+        </div>
+
+        <button
+          className="flex items-center justify-center gap-2
+                    w-full sm:w-auto
+                    px-5 py-3
+                    bg-amber-400 text-black
+                    rounded-lg font-medium
+                    hover:opacity-90 transition"
+        >
+          <FontAwesomeIcon icon={faPlus} />
+          Create Career Path
+        </button>
       </div>
-      <p className="text-3xl font-bold">{value}</p>
-    </div>
+
+
+      {/* Cards Section */}
+      <div className="flex flex-wrap gap-6">
+        {paths.map((path) => (
+          <div
+            key={path.id}
+            className="w-full md:w-[48%] lg:w-[31%] bg-[#141414] border border-gray-800 rounded-xl overflow-hidden hover:border-amber-400 transition"
+          >
+            {/* Top */}
+            <div className="relative">
+              <img
+                src={path.image_url}
+                alt={path.title}
+                className="h-60 w-full object-cover"
+              />
+              <span className="absolute top-3 right-3 text-xs bg-black/70 px-3 py-1 rounded-full text-amber-400">
+                {daysSince(path.created_at)}
+              </span>
+            </div>
+
+            {/* Middle */}
+            <div className="p-5">
+              <h3 className="text-lg font-semibold text-gray-100">
+                {path.title}
+              </h3>
+              <p className="text-sm text-gray-400 mt-2">
+                {path.description}
+              </p>
+            </div>
+
+            {/* Bottom */}
+            <div className="px-5 pb-5 flex items-center gap-2 text-sm text-amber-200 opacity-80">
+              <FontAwesomeIcon icon={faClock} />
+              {activityMap[path.id]
+                ? `Active: ${timeAgo(activityMap[path.id])}`
+                : 'No activity yet'}
+            </div>
+          </div>
+        ))}
+      </div>
+    </main>
   );
 }
