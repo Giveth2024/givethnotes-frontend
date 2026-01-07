@@ -60,7 +60,7 @@ function activityTime(dateString) {
   const date = new Date(dateString);
 
   // manually add +3 hours
-  date.setHours(date.getHours() - 0);
+  date.setHours(date.getHours() - 2);
 
   const diffSeconds = Math.floor((now - date) / 1000);
 
@@ -72,7 +72,6 @@ function activityTime(dateString) {
 
   return `${Math.floor(diffSeconds / 86400)} days ago`;
 }
-
 
 export default function DashboardPage() {
   const { isSignedIn, isLoaded } = useUser();
