@@ -14,10 +14,12 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import DailyQuote from './components/DailyQuote';
 import { useRouter } from 'next/navigation';
-
+import { useUser } from '@clerk/nextjs';
 
 export default function LandingPage() {
   const router = useRouter();
+  const { isSignedIn } = useUser();
+
   function toSignUp()
   {
     router.push('/sign-up');
@@ -44,13 +46,30 @@ export default function LandingPage() {
           </p>
 
           <div className="mt-10 flex gap-4 justify-center">
-            <button onClick={() => toSignIn()} className="px-6 py-3 rounded-lg bg-amber-400 text-black font-medium hover:opacity-90 transition">
-              Login
-            </button>
+            {!isSignedIn ? (
+              <>
+                <button
+                  onClick={() => toSignIn()}
+                  className="px-6 py-3 rounded-lg bg-amber-400 text-black font-medium hover:opacity-90 transition"
+                >
+                  Login
+                </button>
 
-            <button onClick={() => toSignUp()} className="px-6 py-3 rounded-lg border border-gray-600 hover:border-amber-400 transition">
-              Sign Up
-            </button>
+                <button
+                  onClick={() => toSignUp()}
+                  className="px-6 py-3 rounded-lg border border-gray-600 hover:border-amber-400 transition"
+                >
+                  Sign Up
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="px-7 py-3 rounded-lg bg-amber-400 text-black font-medium hover:opacity-90 transition"
+              >
+                Go to Dashboard
+              </button>
+            )}
           </div>
         </div>
       </section>
