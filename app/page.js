@@ -16,6 +16,8 @@ import DailyQuote from './components/DailyQuote';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -29,6 +31,33 @@ export default function LandingPage() {
   {
     router.push('/sign-in');
   }
+
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isSignedIn) return;
+
+    const fetchProtected = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/protected', {
+          withCredentials: true, // ✅ Include cookies for Clerk auth
+        });
+        console.log('Protected data:', res.data);
+        setUserData(res.data.user);
+      } catch (err) {
+        console.error('Failed to fetch protected data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProtected();
+    if (userData === null) {
+      console.log("User data is null");
+      return
+    } 
+  }, [isSignedIn]);
   return (
     <main className="min-h-screen flex flex-col">
       {/* Hero Section */}
