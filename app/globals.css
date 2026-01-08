@@ -1,1 +1,30 @@
 @import "tailwindcss";
+
+/* ===============================
+   Custom Scrollbar (Amber Theme)
+================================ */
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #fbbf24 #141414;
+}
+
+/* Chrome, Edge, Safari */
+::-webkit-scrollbar {
+  width: 12.5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #141414;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #fbbf24; /* amber-400 */
+  border-radius: 9999px;
+  border: 2px solid #141414;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #f59e0b; /* amber-500 */
+}

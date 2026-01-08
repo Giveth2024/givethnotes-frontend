@@ -15,6 +15,7 @@ import {
 import DailyQuote from './components/DailyQuote';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
+import Image from 'next/image';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -73,6 +74,37 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <section className="w-full py-24 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col items-center text-center gap-12">
+          
+          {/* Text */}
+          <div className="max-w-3xl">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Your Learning, Organized Visually
+            </h2>
+
+            <p className="mt-4 text-gray-400 text-lg">
+              A clear, distraction-free dashboard that shows your career paths,
+              progress, and daily learning entries at a glance.
+            </p>
+          </div>
+
+          {/* Image */}
+          <div className="w-full max-w-6xl rounded-2xl overflow-hidden border border-gray-800 shadow-lg shadow-amber-400/70">
+            <Image
+              src="/dashboard.png"
+              alt="GivethNotes Dashboard Preview"
+              width={1600}
+              height={900}
+              className="w-full h-auto object-cover"
+              priority
+            />
+          </div>
+
+        </div>
+      </section>
+
 
       {/* Growth Section */}
       <section className="min-h-screen py-8 px-6">
