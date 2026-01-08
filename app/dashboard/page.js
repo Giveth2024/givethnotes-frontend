@@ -11,35 +11,6 @@ function addGMT3(dateString) {
   return new Date(date.getTime() + 3 * 60 * 60 * 1000);
 }
 
-
-function parseTimestamp(dateString) {
-  // UTC timestamp (ISO with Z)
-  if (dateString.endsWith('Z')) {
-    return new Date(dateString);
-  }
-
-  // MySQL datetime (local)
-  return new Date(dateString.replace(' ', 'T'));
-}
-
-function timeAgo(dateString) {
-  const date = addGMT3(dateString);
-  const now = new Date();
-
-  const diffSeconds = Math.floor(
-    (now.getTime() - date.getTime()) / 1000
-  );
-
-  if (diffSeconds < 60) return 'Just now';
-  if (diffSeconds < 3600)
-    return `${Math.floor(diffSeconds / 60)} mins ago`;
-  if (diffSeconds < 86400)
-    return `${Math.floor(diffSeconds / 3600)} hrs ago`;
-
-  return `${Math.floor(diffSeconds / 86400)} days ago`;
-}
-
-
 function daysSince(dateString) {
   const date = addGMT3(dateString);
   const now = new Date();
