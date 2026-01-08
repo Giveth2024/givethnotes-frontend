@@ -40,7 +40,7 @@ export default function LandingPage() {
 
     const fetchProtected = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/protected', {
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/protected`, {
           withCredentials: true, // ✅ Include cookies for Clerk auth
         });
         console.log('Protected data:', res.data);
