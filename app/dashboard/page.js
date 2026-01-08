@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useUser, RedirectToSignIn } from '@clerk/nextjs';
+import { useUser, RedirectToSignIn, useAuth } from '@clerk/nextjs';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faPlus } from '@fortawesome/free-solid-svg-icons';
 
@@ -12,17 +12,31 @@ function addGMT3(dateString) {
 }
 
 function daysSince(dateString) {
-  const date = addGMT3(dateString);
+  const date = new Date(dateString); // ✅ let JS handle timezone
   const now = new Date();
 
-  const days = Math.floor(
-    (now.getTime() - date.getTime()) / 86400000
+  // Normalize both to local midnight
+  const startOfDate = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  );
+
+  const startOfNow = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+
+  const days = Math.round(
+    (startOfNow - startOfDate) / 86400000
   );
 
   if (days === 0) return 'Today';
   if (days === 1) return 'Yesterday';
   return `${days} Days`;
 }
+
 
 function activityTime(dateString) {
   const now = new Date();
@@ -48,36 +62,44 @@ export default function DashboardPage() {
   const { isSignedIn, isLoaded } = useUser();
   const [paths, setPaths] = useState([]);
   const [activityMap, setActivityMap] = useState({});
+  const { getToken } = useAuth();
 
-  useEffect(() => {
-    if (!isSignedIn) return;
+useEffect(() => {
+  if (!isSignedIn) return;
 
-    axios
-      .get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/career-paths`)
-      .then(async (res) => {
-        setPaths(res.data);
+  const fetchData = async () => {
+    const token = await getToken();
 
-        // Fetch last activity per career path
-        const activityRequests = res.data.map((path) =>
-          axios
-            .get(
-              `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/journal-entries?career_path_id=${path.id}`
-            )
-            .then((r) => ({
-              id: path.id,
-              lastUpdated: r.data?.[0]?.updated_at || null,
-            }))
-        );
+    const api = axios.create({
+      baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-        const results = await Promise.all(activityRequests);
-        const map = {};
-        results.forEach((r) => {
-          map[r.id] = r.lastUpdated;
-        });
+    const res = await api.get("/api/career-paths");
+    setPaths(res.data);
 
-        setActivityMap(map);
-      });
-  }, [isSignedIn]);
+    const activityRequests = res.data.map((path) =>
+      api
+        .get(`/api/journal-entries?career_path_id=${path.id}`)
+        .then((r) => ({
+          id: path.id,
+          lastUpdated: r.data?.[0]?.updated_at || null,
+        }))
+    );
+
+    const results = await Promise.all(activityRequests);
+    const map = {};
+    results.forEach((r) => {
+      map[r.id] = r.lastUpdated;
+    });
+
+    setActivityMap(map);
+  };
+
+  fetchData();
+}, [isSignedIn]);
 
   if (!isLoaded) return null;
   if (!isSignedIn) return <RedirectToSignIn />;
