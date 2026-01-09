@@ -124,7 +124,6 @@ useEffect(() => {
 
   function clickCard(id) {
     const obfuscated = encodeId(id);
-    alert(`Card clicked! ${obfuscated}`);
     router.push(`/career_paths/${obfuscated}`);
   }
 
