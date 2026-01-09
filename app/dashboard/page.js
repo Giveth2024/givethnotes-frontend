@@ -41,7 +41,7 @@ function activityTime(dateString) {
   const date = new Date(dateString);
 
   // manually add +3 hours
-  date.setHours(date.getHours() - 3);
+  date.setHours(date.getHours());
 
   const diffSeconds = Math.floor((now - date) / 1000);
 
@@ -77,13 +77,23 @@ useEffect(() => {
     const res = await api.get("/api/career-paths");
     setPaths(res.data);
 
-    const activityRequests = res.data.map((path) =>
-      api
-        .get(`/api/journal-entries?career_path_id=${path.id}`)
-        .then((r) => ({
+    // Delay function to avoid rate limiting
+    const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+
+    const activityRequests = res.data.map((path, index) =>
+      (async () => {
+        // stagger requests by 150ms each
+        await delay(index * 150);
+
+        const r = await api.get(
+          `/api/journal-entries?career_path_id=${path.id}`
+        );
+
+        return {
           id: path.id,
           lastUpdated: r.data?.[0]?.updated_at || null,
-        }))
+        };
+      })()
     );
 
     const results = await Promise.all(activityRequests);
