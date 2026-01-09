@@ -5,11 +5,7 @@ import axios from 'axios';
 import { useUser, RedirectToSignIn, useAuth } from '@clerk/nextjs';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faPlus } from '@fortawesome/free-solid-svg-icons';
-
-function addGMT3(dateString) {
-  const date = new Date(dateString);
-  return new Date(date.getTime() + 3 * 60 * 60 * 1000);
-}
+import { useRouter } from 'next/navigation';
 
 function daysSince(dateString) {
   const date = new Date(dateString); // ✅ let JS handle timezone
@@ -63,6 +59,7 @@ export default function DashboardPage() {
   const [paths, setPaths] = useState([]);
   const [activityMap, setActivityMap] = useState({});
   const { getToken } = useAuth();
+  const router = useRouter();
 
 useEffect(() => {
   if (!isSignedIn) return;
@@ -124,7 +121,8 @@ useEffect(() => {
                     px-5 py-3
                     bg-amber-400 text-black
                     rounded-lg font-medium
-                    hover:opacity-90 transition"
+                    hover:opacity-90 active:bg-amber-600 transition"
+          onClick={() => router.push('/career_paths/create')}
         >
           <FontAwesomeIcon icon={faPlus} />
           Create Career Path
