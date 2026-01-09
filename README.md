@@ -60,6 +60,77 @@ This project is built with Next.js using the App Router. Below is a brief overvi
 ### Other
 - **Icons (`app/icons/page.js`)**: A simple page demonstrating the usage of FontAwesome icons within the project.
 
+## Recent Changes / Changelog
+
+The following changes were implemented during recent UI and routing improvements. These notes explain what changed, where to find the code, and any runtime or developer actions required.
+
+- **Career Path Detail Layout (new)**
+  - File: `app/career_paths/[id]/page.js`
+  - Replaced placeholder details with a full, styled layout: left image, right details column (title, description, start date), a horizontal divider, stats + action buttons, timeline header, and timeline cards.
+  - Styling: Tailwind utility classes used with an amber/gray color scheme to match the rest of the app. Cards use a left accent border and hover shadow.
+
+- **New Timeline Cards**
+  - File: `app/career_paths/[id]/page.js`
+  - Three timeline cards were added: "Learning CSS" (highlighted as Today), "JavaScript Fundamentals" (Jan 8, 2026), and "Database Design" (Jan 7, 2026).
+  - The card for today's entry has a distinct amber gradient and left border; non-highlighted cards use a subtle gray background.
+  - Each card shows date, title, description and action icons (open / delete) on the right.
+
+- **Font Awesome icons**
+  - Icons used: calendar, pencil (edit), external-link (open card), trash (delete), clock and plus on the dashboard.
+  - Note: `faArrowUpRight` was replaced with `faExternalLink` because `faArrowUpRight` is not exported by `@fortawesome/free-solid-svg-icons` in this project.
+
+- **Responsive improvements**
+  - The header, stats area, and timeline header now use `flex-col` on small screens and `md:` breakpoints for desktop layouts.
+  - The layout centers content on small devices and left-aligns on medium+ screens.
+  - Title and ID in the header were adjusted to always remain on the same line: the title now truncates on small screens (`truncate` + `min-w-0`) to avoid wrapping while the ID badge remains visible.
+
+- **Image optimization & `next/image`**
+  - The inline `<img>` usage on the career path page was replaced with Next.js `Image` for optimized loading and lazy loading benefits.
+  - Parent wrapper is positioned `relative` and uses `fill` on the `Image` element for a responsive cover behavior.
+  - Because the image is loaded from `i.pinimg.com`, `next.config.mjs` was updated to allow that host under `images.remotePatterns`:
+
+    ```js
+    // next.config.mjs
+    const nextConfig = {
+      images: {
+        remotePatterns: [
+          {
+            protocol: 'https',
+            hostname: 'i.pinimg.com',
+          },
+        ],
+      },
+    };
+
+    export default nextConfig;
+    ```
+
+  - Developer action: restart the dev server after changing `next.config.mjs` to pick up the configuration.
+
+- **ID obfuscation for routes (encode/decode)**
+  - Files: `app/dashboard/page.js` and `app/career_paths/[id]/page.js`
+  - Purpose: to avoid exposing raw numeric IDs in the URL, a simple URL-safe Base64 obfuscation was introduced:
+    - `encodeId(id)` — added to `app/dashboard/page.js`. When navigating from the dashboard, `clickCard` now calls `encodeId(path.id)` and navigates to `/career_paths/${encoded}`.
+    - `decodeId(val)` — added to `app/career_paths/[id]/page.js`. The detail page reads the raw route param and decodes it before use: `const { id: rawId } = useParams(); const id = decodeId(rawId);`.
+  - These helpers use standard `btoa`/`atob` with URL-safe replacements (`+` -> `-`, `/` -> `_`) and padding handling.
+  - Security note: This is *obfuscation*, not encryption — do not treat this as a secure mechanism for hiding sensitive IDs.
+
+- **Dashboard navigation**
+  - File: `app/dashboard/page.js`
+  - `clickCard` was updated to encode the id before routing: `router.push(`/career_paths/${encodeId(id)}`)`.
+  - The dashboard still fetches and displays career paths from the API and activity timestamps; images in the dashboard remain `<img>` for now (you can switch them to `next/image` later if desired and add the remote host config if needed).
+
+## How to use the obfuscation helpers
+
+- When building links to career path details from other parts of the app, use `encodeId(path.id)` so the route contains the obfuscated id.
+- On the detail page, `useParams()` returns the obfuscated id; the page now decodes it automatically using `decodeId(rawId)` before using it in the UI or API calls.
+
+## Notes & Next Steps
+
+- If you want stronger security than obfuscation, consider using UUIDs on the server-side or signed tokens for URLs.
+- Consistency: you may convert other image tags across the app to `next/image`. If you do, remember to add their hostnames to `next.config.mjs`.
+- Testing: verify navigation from the dashboard to a career path detail works in dev after restarting the server (so `next.config.mjs` changes apply).
+
 ## Authentication (Clerk) ✅
 This project uses [Clerk](https://clerk.com) for authentication.
 

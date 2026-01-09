@@ -54,6 +54,17 @@ function activityTime(dateString) {
   return `${Math.floor(diffSeconds / 86400)} days ago`;
 }
 
+// URL-safe Base64 helpers for simple obfuscation
+function encodeId(id) {
+  try {
+    const str = String(id);
+    const b64 = btoa(unescape(encodeURIComponent(str)));
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  } catch (e) {
+    return String(id);
+  }
+}
+
 export default function DashboardPage() {
   const { isSignedIn, isLoaded } = useUser();
   const [paths, setPaths] = useState([]);
@@ -111,6 +122,12 @@ useEffect(() => {
   if (!isLoaded) return null;
   if (!isSignedIn) return <RedirectToSignIn />;
 
+  function clickCard(id) {
+    const obfuscated = encodeId(id);
+    alert(`Card clicked! ${obfuscated}`);
+    router.push(`/career_paths/${obfuscated}`);
+  }
+
   return (
     <main className="min-h-screen px-8 py-10">
       {/* Top Section */}
@@ -146,6 +163,7 @@ useEffect(() => {
           <div
             key={path.id}
             className="w-full md:w-[48%] lg:w-[31%] bg-[#141414] border border-gray-800 rounded-xl overflow-hidden hover:border-amber-400 transition"
+             onClick={() => clickCard(path.id)}
           >
             {/* Top */}
             <div className="relative">
