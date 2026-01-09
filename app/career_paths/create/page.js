@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth, useUser } from '@clerk/nextjs';
 import { useEffect } from 'react';
 import axios from 'axios';
+import { toast } from 'sonner';
 
 export default function CreateCareerPathPage() {
   const router = useRouter();
@@ -44,10 +45,33 @@ export default function CreateCareerPathPage() {
         })
         .then(response => {
             console.log('Career path created:', response.data);
-            router.push('/dashboard'); // Redirect to dashboard or another page
+            toast.success('Career path created!', {
+                style: {
+                    background: '#052e16', // dark green
+                    border: '1px solid #22c55e',
+                    color: '#dcfce7',
+                },
+            });
+
+
+            setTimeout(() => {
+                router.push('/dashboard');
+                router.refresh();
+            }, 1000);
         })
         .catch(error => {
             console.error('Error creating career path:', error);
+            toast.error(
+            error?.response?.data?.message || 'Failed to create career path',
+            {
+                style: {
+                    background: '#450a0a', // deep dark red (maroon)
+                    border: '1px solid #ef4444', // bright red border for "danger" feel
+                    color: '#fee2e2', // very light pink/white for high legibility
+                },
+            }
+            );
+
         }); 
     };
 

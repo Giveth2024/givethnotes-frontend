@@ -3,6 +3,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import { ClerkProvider } from '@clerk/nextjs';
 import Heartbeat from "./components/Heartbeat";
+import { Toaster } from "sonner";
 
 export const metadata = {
   title: "GivethNotes",
@@ -18,6 +19,21 @@ export default function RootLayout({ children }) {
         >
           <Heartbeat /> {/* Keep the API connection alive */}
           <Navbar />
+
+          {/* 🔔 Toasts */}
+          <Toaster
+            position="top-right"
+            richColors
+            theme="dark"
+            toastOptions={{
+              style: {
+                background: '#141414',
+                border: '1px solid #27272a',
+                color: '#e5e7eb',
+              },
+            }}
+          />
+          
           {children}
           <Footer />
         </body>
