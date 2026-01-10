@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useAuth, useUser } from '@clerk/nextjs';
+import { useAuth, RedirectToSignIn, useUser } from '@clerk/nextjs';
+import axios from 'axios';
+import { toast } from 'sonner';
 
 // URL-safe Base64 helpers for simple obfuscation
 function decodeId(val) {
@@ -29,6 +31,8 @@ export default function EditCareerPathPage() {
   const [pathName, setPathName] = useState('');
   const [description, setDescription] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [showDeletePrompt, setShowDeletePrompt] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     // if user is not signed in, redirect to sign-in page
@@ -36,27 +40,149 @@ export default function EditCareerPathPage() {
     if (!isSignedIn) {
       router.push('/sign-in');
     }
+
+    fetchCareerPath(decodeId(id));
   }, [isSignedIn, isLoaded, router]);
 
   // Placeholder: if you want to fetch existing career path data by `id`, add an effect here.
 
   const handleSave = async () => {
     // Print everything to console as requested
-    console.log({ id, pathName, description, imageUrl });
+    // console.log({ id, pathName, description, imageUrl });
 
     // Example: if you later want to call your API, you could use getToken() and axios here.
+    try{
+        const token = await getToken();
+        // Example API call to update career path data
+        const response = await axios.put(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/career-paths/${id}`,  
+            {
+                title: pathName,
+                description: description,
+                image_url: imageUrl
+            },
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                }
+            }
+        );
+
+        // console.log('Career path updated:', response.data);
+
+        toast.success('Career path Updated Successfully!', {
+            style: {
+                background: '#052e16', // dark green
+                border: '1px solid #22c55e',
+                color: '#dcfce7',
+            },
+        });
+
+
+        setTimeout(() => {
+            router.push('/dashboard');
+            router.refresh();
+        }, 1000);
+    } catch (error) {
+        console.error("Error updating career path:", error);
+        toast.error(
+            error?.response?.data?.message || `Failed to update career path with id:${decodeId(id)}`,
+            {
+                style: {
+                    background: '#450a0a', // deep dark red (maroon)
+                    border: '1px solid #ef4444', // bright red border for "danger" feel
+                    color: '#fee2e2', // very light pink/white for high legibility
+                },
+            }
+        );
+    }
   };
 
-  const handleDelete = async () => {
-    const confirmed = window.confirm('Are you sure you want to delete this career path?');
-    if (!confirmed) return;
-
-    // Perform deletion (currently just logging as requested)
-    console.log('Career Path Deleted Successfully');
-
-    // Redirect to dashboard
-    router.push('/dashboard');
+  const handleDelete = () => {
+    // Open styled confirmation prompt instead of using window.confirm
+    setShowDeletePrompt(true);
   };
+
+  const confirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const token = await getToken();
+      const response = await axios.delete(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/career-paths/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Show server message in toast
+      toast.success(response?.data?.message || 'Career path deleted successfully', {
+        style: {
+          background: '#052e16',
+          border: '1px solid #22c55e',
+          color: '#dcfce7',
+        },
+      });
+
+      // Close prompt and delay then redirect to dashboard
+      setShowDeletePrompt(false);
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 1000);
+    } catch (error) {
+      console.error('Error deleting career path:', error);
+      toast.error(
+        error?.response?.data?.message || 'Failed to delete career path',
+        {
+          style: {
+            background: '#450a0a',
+            border: '1px solid #ef4444',
+            color: '#fee2e2',
+          },
+        }
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  async function fetchCareerPath(id) {
+    try {
+
+        const token = await getToken();
+        // Example API call to fetch career path data
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/career-paths/${id}`,
+        {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            }
+        });
+        const data = response.data;
+        // console.log("Fetched career path data:", data);
+
+        // Populate state with fetched data
+        setPathName(data.title || '');
+        setDescription(data.description || '');
+        setImageUrl(data.image_url || '');
+
+    }
+    catch (error)
+    {
+        console.error("Error fetching career path:", error);
+        toast.error(
+            error?.response?.data?.message || `Failed to create career path with id:${decodeId(id)}`,
+            {
+                style: {
+                    background: '#450a0a', // deep dark red (maroon)
+                    border: '1px solid #ef4444', // bright red border for "danger" feel
+                    color: '#fee2e2', // very light pink/white for high legibility
+                },
+            }
+        );
+
+    }
+
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-12">
@@ -153,6 +279,32 @@ export default function EditCareerPathPage() {
             </button>
           </div>
         </div>
+
+        {/* Confirm Delete Modal */}
+        {showDeletePrompt && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="fixed inset-0 bg-black/50" onClick={() => setShowDeletePrompt(false)} />
+            <div className="relative bg-zinc-900 p-6 rounded-lg w-full max-w-md z-10 border border-zinc-700">
+              <h3 className="text-lg font-semibold text-red-400">Confirm Deletion</h3>
+              <p className="mt-2 text-sm text-gray-400">Are you sure you want to delete this career path? This action cannot be undone.</p>
+              <div className="mt-4 flex justify-end gap-3">
+                <button
+                  onClick={() => setShowDeletePrompt(false)}
+                  className="px-4 py-2 rounded-lg border border-zinc-700 text-gray-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={isDeleting}
+                  className="px-4 py-2 rounded-lg bg-red-700 text-white"
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
