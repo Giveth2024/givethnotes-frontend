@@ -48,6 +48,10 @@ This project is built with Next.js using the App Router. Below is a brief overvi
 - **Sign In (`app/sign-in/[[...sign-in]]/page.js`)**: Sign in UI powered by Clerk, available at `/sign-in`. After sign-in users are redirected to `/dashboard`.
 - **Sign Up (`app/sign-up/[[...sign-up]]/page.js`)**: Sign up UI powered by Clerk, available at `/sign-up`. After sign-up users are redirected to `/dashboard`.
 - **Dashboard (`app/dashboard/page.js`)**: User dashboard and private area (intended for authenticated users).
+- **Create Career Path (`app/career_paths/create/page.js`)**: A client-side form to create a new career path. It posts to `
+  `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/career-paths`
+  ` using `axios` and shows success/error feedback with `sonner` toasts. Requires authentication.
+- **Edit Career Path (`app/career_paths/[id]/edit/page.js`)**: Edit page that first fetches the career path via `GET /api/career-paths/:id` to pre-fill the form, supports updating via `PUT /api/career-paths/:id`, and allows deleting via `DELETE /api/career-paths/:id` (deletion is confirmed via a styled modal and shows server messages using `sonner`).
 
 ### Components
 - **Navbar (`app/components/Navbar.js`)**: A sticky navigation bar that includes the GivethNotes logo and a call-to-action button.
@@ -56,6 +60,13 @@ This project is built with Next.js using the App Router. Below is a brief overvi
 
 ### API Routes
 - **Quote API (`app/api/quote/route.js`)**: A server-side route that proxies requests to `zenquotes.io` to provide fresh daily quotes while avoiding CORS issues.
+- **Career Paths (external API)**: The frontend interacts with a career-paths API via the base URL configured in `NEXT_PUBLIC_API_BASE_URL`. Endpoints used by the UI:
+  - `POST /api/career-paths` — create a career path (used by `app/career_paths/create/page.js`).
+  - `GET /api/career-paths/:id` — fetch a single career path (used by `app/career_paths/[id]/edit/page.js`).
+  - `PUT /api/career-paths/:id` — update a career path (used by `app/career_paths/[id]/edit/page.js`).
+  - `DELETE /api/career-paths/:id` — delete a career path (used by `app/career_paths/[id]/edit/page.js`).
+
+  Note: Requests include an `Authorization: Bearer <token>` header obtained with Clerk's `getToken()` in the frontend; the base URL is read from `NEXT_PUBLIC_API_BASE_URL`.
 
 ### Other
 - **Icons (`app/icons/page.js`)**: A simple page demonstrating the usage of FontAwesome icons within the project.
@@ -119,6 +130,13 @@ The following changes were implemented during recent UI and routing improvements
   - File: `app/dashboard/page.js`
   - `clickCard` was updated to encode the id before routing: `router.push(`/career_paths/${encodeId(id)}`)`.
   - The dashboard still fetches and displays career paths from the API and activity timestamps; images in the dashboard remain `<img>` for now (you can switch them to `next/image` later if desired and add the remote host config if needed).
+
+- **Create / Edit / Delete Career Paths (new)**
+  - Files:
+    - `app/career_paths/create/page.js` — creation form; sends `POST` to `/api/career-paths` and shows `sonner` toasts on success/error.
+    - `app/career_paths/[id]/edit/page.js` — edit form; fetches via `GET /api/career-paths/:id`, updates via `PUT /api/career-paths/:id`, and deletes via `DELETE /api/career-paths/:id`.
+  - UX details: the edit page pre-fills fields from the fetched data, displays success and error messages via `sonner` toasts, and uses a styled confirmation modal for delete. On successful delete the server message is displayed via `toast.success` and the UI redirects to `/dashboard` after a short delay.
+  - Auth & API: All write operations include `Authorization: Bearer <token>` obtained with `getToken()` from Clerk; the frontend reads the API base from `NEXT_PUBLIC_API_BASE_URL`.
 
 ## How to use the obfuscation helpers
 
