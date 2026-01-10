@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendar, faPencil, faExternalLink, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 // URL-safe Base64 helpers for simple obfuscation
 function decodeId(val) {
@@ -20,7 +21,19 @@ function decodeId(val) {
   }
 }
 
+// URL-safe Base64 helpers for simple obfuscation
+function encodeId(id) {
+  try {
+    const str = String(id);
+    const b64 = btoa(unescape(encodeURIComponent(str)));
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  } catch (e) {
+    return String(id);
+  }
+}
+
 export default function CareerPathPage() {
+  const router = useRouter();
   const { id: rawId } = useParams();
   const id = decodeId(rawId);
   const [entries] = useState([
@@ -46,6 +59,11 @@ export default function CareerPathPage() {
       isToday: false
     }
   ]);
+
+  function editCareerPath(id) {
+    const obfuscated = encodeId(id);
+    router.push(`/career_paths/${obfuscated}/edit`);
+  }
 
   return (
     <main className="min-h-screen px-8 py-10">
@@ -106,7 +124,7 @@ export default function CareerPathPage() {
           <button className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-4 md:px-6 py-2 rounded-lg font-semibold transition-colors duration-200 text-sm md:text-base">
             + Add Today's Entry
           </button>
-          <button className="border border-amber-400 hover:bg-amber-400/10 text-amber-400 px-4 md:px-6 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2 text-sm md:text-base">
+          <button className="border border-amber-400 hover:bg-amber-400/10 text-amber-400 px-4 md:px-6 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2 text-sm md:text-base" onClick={() => editCareerPath(id)}>
             <FontAwesomeIcon icon={faPencil} className="w-3 md:w-4 h-3 md:h-4" />
             Edit Career Path
           </button>
