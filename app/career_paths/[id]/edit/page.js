@@ -268,7 +268,7 @@ export default function EditCareerPathPage() {
         <div className="mt-8 border border-red-700 rounded-lg p-6 bg-zinc-900">
           <h3 className="text-xl font-semibold text-red-400">Danger Zone</h3>
           <h4 className="mt-2 font-medium">Delete this Career Path</h4>
-          <p className="text-sm text-gray-400 mt-1">Delete Message</p>
+          <p className="text-sm text-gray-400 mt-1">Deleting this path will permanently remove the path and cascade delete all <span className='font-bold'>142 associated notes</span> and blocks. This action cannot be undone.</p>
 
           <div className="mt-4">
             <button
@@ -286,7 +286,7 @@ export default function EditCareerPathPage() {
             <div className="fixed inset-0 bg-black/50" onClick={() => setShowDeletePrompt(false)} />
             <div className="relative bg-zinc-900 p-6 rounded-lg w-full max-w-md z-10 border border-zinc-700">
               <h3 className="text-lg font-semibold text-red-400">Confirm Deletion</h3>
-              <p className="mt-2 text-sm text-gray-400">Are you sure you want to delete this career path? This action cannot be undone.</p>
+              <p className="mt-2 text-sm text-gray-400">This is your Last Line of Defense, Sergeant. Are you sure you want to delete this career path? This action cannot be undone.</p>
               <div className="mt-4 flex justify-end gap-3">
                 <button
                   onClick={() => setShowDeletePrompt(false)}
