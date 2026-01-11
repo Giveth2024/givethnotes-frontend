@@ -1,7 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { useParams } from 'next/navigation' 
-import { v4 as uuid } from 'uuid'
+import { useParams, useRouter } from 'next/navigation' 
 import axios from 'axios'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { useAuth, useUser } from '@clerk/nextjs'
@@ -56,6 +55,17 @@ function decodeId(val) {
   }
 } 
 
+// URL-safe Base64 helpers for simple obfuscation
+function encodeId(id) {
+  try {
+    const str = String(id);
+    const b64 = btoa(unescape(encodeURIComponent(str)));
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  } catch (e) {
+    return String(id);
+  }
+}
+
 export default function JournalEntryEditor() {
   // Document as a single textarea
   const [docText, setDocText] = useState('')
@@ -64,6 +74,12 @@ export default function JournalEntryEditor() {
   const [justSaved, setJustSaved] = useState(false)
   const textareaRef = useRef(null)
   const lastTapRef = useRef(0)
+  const router = useRouter()
+
+  function BackToCareerPathPage(id) {
+    const obfuscated = encodeId(id);
+    router.push(`/career_paths/${obfuscated}`);
+  }
 
   // Read route id and decode it
   const params = useParams()
@@ -203,8 +219,6 @@ export default function JournalEntryEditor() {
         content: parsed,
       }
 
-      console.log('Saving to server with payload:', payload)
-
       const res = await axios.post(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/entry-blocks`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -219,7 +233,10 @@ export default function JournalEntryEditor() {
                 color: '#dcfce7',
             },
         });
-      console.log('Server saved:', res?.data);
+        setTimeout(() => {
+          BackToCareerPathPage(id);
+          router.refresh();
+      }, 1000);
     } catch (e) {
       console.error('Failed to save to server', e);
         toast.error(
@@ -238,6 +255,7 @@ export default function JournalEntryEditor() {
   const handleCancel = () => {
     setDocText(savedDocText || '')
     closeMenu()
+    BackToCareerPathPage(id);
   }
 
   // Double-click handler and touch double-tap: open contextual menu at cursor position (viewport coords)
@@ -413,9 +431,16 @@ export default function JournalEntryEditor() {
         {/* ACTIONS (below preview) */}
         <div className="flex justify-end gap-3">
           <button onClick={handleCancel} className="border border-amber-400 hover:bg-amber-400/10 text-amber-400 px-4 py-2 rounded-lg font-semibold text-sm">Cancel</button>
-          <button onClick={handleSave} className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2">
-            Save
-            {justSaved && <span className="ml-2 text-xs text-gray-800 bg-amber-300 px-2 py-1 rounded">Saved</span>}
+          <button 
+            onClick={handleSave} 
+            disabled={justSaved}
+            className={`px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-colors ${
+              justSaved 
+                ? "bg-green-600 text-white cursor-default" // Success State
+                : "bg-amber-400 hover:bg-amber-500 text-gray-900" // Default State
+            }`}
+          >
+            {justSaved ? "✓ Saved" : "Save"}
           </button>
         </div>
 
