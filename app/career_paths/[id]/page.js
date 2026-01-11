@@ -64,6 +64,11 @@ export default function CareerPathPage() {
     const obfuscated = encodeId(id);
     router.push(`/career_paths/${obfuscated}/edit`);
   }
+  
+  function createCareerPathBlock(id) {
+    const obfuscated = encodeId(id);
+    router.push(`/career_paths/${obfuscated}/blocks/create`);
+  }
 
   return (
     <main className="min-h-screen px-8 py-10">
@@ -121,7 +126,7 @@ export default function CareerPathPage() {
 
         {/* Right: Action Buttons */}
         <div className="flex flex-col md:flex-row gap-3 md:gap-4 w-full md:w-auto">
-          <button className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-4 md:px-6 py-2 rounded-lg font-semibold transition-colors duration-200 text-sm md:text-base">
+          <button className="bg-amber-400 hover:bg-amber-500 text-gray-900 px-4 md:px-6 py-2 rounded-lg font-semibold transition-colors duration-200 text-sm md:text-base" onClick={() => createCareerPathBlock(id)}>
             + Add Today's Entry
           </button>
           <button className="border border-amber-400 hover:bg-amber-400/10 text-amber-400 px-4 md:px-6 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center justify-center gap-2 text-sm md:text-base" onClick={() => editCareerPath(id)}>
