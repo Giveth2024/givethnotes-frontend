@@ -4,8 +4,11 @@ import { useParams } from 'next/navigation';
 import Image from 'next/image';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendar, faPencil, faExternalLink, faTrash } from '@fortawesome/free-solid-svg-icons';
-import { useState } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
+import axios from 'axios';
+import { toast } from 'sonner';
 
 // URL-safe Base64 helpers for simple obfuscation
 function decodeId(val) {
@@ -32,33 +35,40 @@ function encodeId(id) {
   }
 }
 
+function extractTitle(blocks) {
+  return blocks.find(b => b.type === 'title')?.content || 'Untitled Entry';
+}
+
+function extractDescription(blocks) {
+  const paragraph = blocks.find(b => b.type === 'paragraph')?.content || '';
+  if (paragraph.length <= 250) return paragraph;
+  return paragraph.slice(0, 250) + '...';
+}
+
+function isToday(dateStr) {
+  const today = new Date().toISOString().slice(0, 10);
+  const date = new Date(dateStr).toISOString().slice(0, 10);
+  return today === date;
+}
+
+
 export default function CareerPathPage() {
+  const { getToken } = useAuth();
   const router = useRouter();
   const { id: rawId } = useParams();
   const id = decodeId(rawId);
-  const [entries] = useState([
-    {
-      id: 1,
-      title: 'Learning CSS',
-      description: 'Explored flexbox layout techniques and media queries for responsive design patterns.',
-      date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-      isToday: true
-    },
-    {
-      id: 2,
-      title: 'JavaScript Fundamentals',
-      description: 'Deep dive into ES6 classes, arrow functions, and async/await patterns for modern JavaScript.',
-      date: 'Jan 8, 2026',
-      isToday: false
-    },
-    {
-      id: 3,
-      title: 'Database Design',
-      description: 'Studied relational database normalization and built queries for complex data retrieval.',
-      date: 'Jan 7, 2026',
-      isToday: false
-    }
-  ]);
+  const [entries, setEntries] = useState([]);
+  const [careerPath, setCareerPath] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      await fetchBlocks(id); // keep your blocks fetch
+
+      const cp = await fetchCareerPath(id);
+      if (cp) setCareerPath(cp);
+    };
+    fetchData();
+  }, [id]);
 
   function editCareerPath(id) {
     const obfuscated = encodeId(id);
@@ -70,6 +80,109 @@ export default function CareerPathPage() {
     router.push(`/career_paths/${obfuscated}/blocks/create`);
   }
 
+  async function fetchBlocks(id) {
+    const token = await getToken();
+
+    const res = await axios.get(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/entry-blocks?career_path_id=${id}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const formattedEntries = res.data
+      .map(entry => ({
+        id: entry.id,
+        title: extractTitle(entry.content),
+        description: extractDescription(entry.content),
+        date: new Date(entry.created_at).toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        }),
+        isToday: isToday(entry.created_at),
+      }))
+      .sort((a, b) => new Date(b.date) - new Date(a.date)); // <-- latest first
+
+    setEntries(formattedEntries);
+
+  }
+
+  const totalEntries = entries.length;
+
+  const daysStudied = new Set(
+    entries.map(entry => entry.date)
+  ).size;
+
+  async function deleteBLock(entryId) {
+    const token = await getToken();
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/entry-blocks?id=${entryId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok) {
+        alert(data.message || 'Failed to delete block');
+        return;
+      }
+
+      toast.success('Entry Block deleted successfully!', {
+            style: {
+                background: '#052e16', // dark green
+                border: '1px solid #22c55e',
+                color: '#dcfce7',
+            },
+      });
+      
+      console.log('✅ Deleted:', data);
+      // Refresh the entries list after deletion
+      fetchBlocks(id);
+    } catch (err) {
+      console.error('❌ Delete error:', err);
+      toast.error(
+        err?.response?.data?.message || 'Failed to delete Entry Block',
+        {
+            style: {
+                background: '#450a0a', // deep dark red (maroon)
+                border: '1px solid #ef4444', // bright red border for "danger" feel
+                color: '#fee2e2', // very light pink/white for high legibility
+            },
+        }
+        );
+    }
+  }
+
+  async function fetchCareerPath(id) {
+    try {
+      const token = await getToken();
+
+      const res = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/career-paths/${id}`,
+        {
+          headers: { 
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Return the response data
+      return res.data;
+    } catch (err) {
+      console.error('❌ Fetch career path error:', err);
+      return null; // return null on error
+    }
+  }
+
+
   return (
     <main className="min-h-screen px-8 py-10">
       
@@ -78,18 +191,19 @@ export default function CareerPathPage() {
         {/* Left: Image */}
         <div className="shrink-0 w-full md:w-64 relative h-48 md:h-64">
           <Image
-            src="https://i.pinimg.com/736x/26/86/1c/26861ce966c34c51445b5bcdd2a7d1ee.jpg"
-            alt="Career Path"
+            src={careerPath?.image_url || "https://i.pinimg.com/736x/3a/67/19/3a67194f5897030237d83289372cf684.jpg"}
+            alt={careerPath?.title || "Career Path"}
             fill
             className="object-cover rounded-lg shadow-lg border border-amber-400/20"
           />
         </div>
 
+
         {/* Right: Title, Description, Started Date */}
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-4 min-w-0">
             <h1 className="flex-1 min-w-0 text-2xl md:text-4xl font-bold text-amber-400 truncate">
-              Full Stack Development
+              {careerPath?.title || 'Loading...'}
             </h1>
             <span className="text-xs ml-0 md:ml-2 font-mono bg-[#141414] text-amber-400 px-2 py-1 rounded">
               ID: {id}
@@ -97,12 +211,12 @@ export default function CareerPathPage() {
           </div>
           
           <p className="text-gray-300 mb-6 leading-relaxed max-w-2xl text-center md:text-left text-sm md:text-base">
-            Master the complete web development stack from frontend to backend. Learn modern frameworks, databases, and deployment strategies to build scalable applications.
+            {careerPath?.description || 'Loading career path description...'}
           </p>
 
           <div className="flex items-center justify-center md:justify-start gap-2 text-gray-400 text-sm md:text-base">
             <FontAwesomeIcon icon={faCalendar} className="text-amber-400 w-4 md:w-5 h-4 md:h-5" />
-            <span>Started on Jan 1, 2026</span>
+            <span>Started on {careerPath ? new Date(careerPath.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) : '...'}</span>
           </div>
         </div>
       </div>
@@ -115,11 +229,11 @@ export default function CareerPathPage() {
         {/* Left: Stats */}
         <div className="flex flex-col md:flex-row gap-6 md:gap-12 w-full md:w-auto">
           <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-amber-400 mb-2">15</div>
+            <div className="text-3xl md:text-4xl font-bold text-amber-400 mb-2">{daysStudied}</div>
             <div className="text-gray-400 text-xs md:text-sm uppercase tracking-wider">Days Studied</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-amber-400 mb-2">42</div>
+            <div className="text-3xl md:text-4xl font-bold text-amber-400 mb-2">{totalEntries}</div>
             <div className="text-gray-400 text-xs md:text-sm uppercase tracking-wider">Total Entries</div>
           </div>
         </div>
@@ -139,12 +253,6 @@ export default function CareerPathPage() {
       {/* Timeline Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <h2 className="text-xl md:text-2xl font-bold text-gray-100">Timeline</h2>
-        <div className="flex items-center gap-2">
-          <span className="text-gray-400 text-sm md:text-base">Filter by:</span>
-          <button className="bg-gray-800 hover:bg-gray-700 text-gray-200 px-3 md:px-4 py-1 rounded text-xs md:text-sm font-medium transition-colors duration-200">
-            Newest
-          </button>
-        </div>
       </div>
 
       {/* Timeline Cards */}
@@ -182,10 +290,14 @@ export default function CareerPathPage() {
 
               {/* Right Section: Icons (vertical) */}
               <div className="flex flex-col gap-4 justify-center">
-                <button className="bg-amber-400/20 hover:bg-amber-400/40 text-amber-400 p-2 rounded transition-colors duration-200" title="Open entry">
+                <button className="bg-amber-400/20 hover:bg-amber-400/40 text-amber-400 p-2 rounded transition-colors duration-200" title="Open entry"
+                  onClick={() => {
+                    localStorage.setItem('entryId', entry.id); // store the entry id
+                    router.push(`/career_paths/${encodeId(id)}/blocks/view/`)
+                  }}>
                   <FontAwesomeIcon icon={faExternalLink} className="w-5 h-5" />
                 </button>
-                <button className="bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded transition-colors duration-200" title="Delete entry">
+                <button className="bg-red-500/20 hover:bg-red-500/40 text-red-400 p-2 rounded transition-colors duration-200" title="Delete entry" onClick={() => deleteBLock(entry.id)}>
                   <FontAwesomeIcon icon={faTrash} className="w-5 h-5" />
                 </button>
               </div>
